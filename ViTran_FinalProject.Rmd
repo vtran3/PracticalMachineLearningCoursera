@@ -1,0 +1,83 @@
+---
+title: "FinalProject_PracticalMachineLearning"
+author: "Vi Tran"
+date: "March 26, 2017"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+#Load neccessary packages
+library(caret)
+library(rattle)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(repmis)
+```
+```{r}
+#Load training and testing datasets
+training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",header = T,na.strings = c("NA",""))
+testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",header = T, na.strings = c("NA",""))
+
+#Examine the data
+head(training);names(training)
+names(testing)
+```
+Data Cleaning
+```{r}
+#Delete comlumns with NA value
+training <- training[,colSums(is.na(training))==0]
+testing <- testing[,colSums(is.na(testing))==0]
+```
+
+Remove weak predictors (fist 7)
+```{r}
+trainData <- training[,-c(1:7)]
+testData <- testing[,-c(1:7)]
+```
+
+The training data is then splitted for cross validation
+```{r}
+set.seed(1410)
+intrain <- createDataPartition(training$classe, p = 0.7, list = F)
+train <- trainData[intrain,]
+valid <- trainData[-intrain,]
+```
+
+Predictions with Classification Tree
+```{r}
+control <- trainControl(method = "cv", number = 7)
+mod1 <- train(classe ~ ., data = train, method="rpart", trControl=control)
+print(mod1,digits=4)
+```
+```{r}
+fancyRpartPlot(mod1$finalModel)
+```
+
+Predict outcomes with the validation dataset
+Then show the prediction results
+```{r}
+predict_mod1 <- predict(mod1, valid)
+confusionMatrix(valid$classe,predict_mod1)
+```
+The accuracy rate is 0.4953, which results in the out-of-sample error rate of 0.5047. 
+
+Predict with Random Forests
+```{r}
+mod2 <- train(classe ~ ., data = train, method = "rf", trControl = control)
+print (mod2, digits = 4)
+```
+
+Predict outcomes with valid set
+```{r}
+predict_mod2 <- predict(mod2, valid)
+confusionMatrix(valid$classe, predict_mod2)
+```
+predict(mod2, testing)
+```{r}
+predict(mod2, testing)
+```
